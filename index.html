@@ -6,10 +6,15 @@
 <title>WebGL 2.0 Browser Test — Three.js r160</title>
 <style>
 :root {
-  color-scheme: dark;
-  --bg:#10141b; --panel:#191f29; --line:#354153;
-  --text:#e8edf5; --muted:#a7b2c3; --good:#75dfaa;
-  --bad:#ff8b8b; --accent:#80b7ff;
+  color-scheme: light;
+  --bg:#f3f6fa;
+  --panel:#ffffff;
+  --line:#d6deea;
+  --text:#202938;
+  --muted:#657187;
+  --good:#16834c;
+  --bad:#c52e3b;
+  --accent:#1769c2;
 }
 * { box-sizing:border-box }
 body {
@@ -37,7 +42,7 @@ p { margin:6px 0 }
 #stage {
   height:390px; min-height:260px; position:relative; overflow:hidden;
   border:1px solid var(--line); border-radius:10px;
-  background:radial-gradient(ellipse at center,#222d3d,#111720 72%)
+  background:radial-gradient(ellipse at center,#e5edf7,#cbd8e8 72%)
 }
 #stage canvas { display:block; width:100%; height:100% }
 .overlay {
@@ -60,7 +65,7 @@ p { margin:6px 0 }
   display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
   gap:10px; margin-top:14px
 }
-.metric { background:#202836; border-radius:10px; padding:12px }
+.metric { background:#eaf0f7; border-radius:10px; padding:12px }
 .metric strong {
   display:block; font-size:1.35rem; font-variant-numeric:tabular-nums
 }
@@ -68,7 +73,7 @@ p { margin:6px 0 }
 .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px }
 button {
   border:1px solid var(--line); border-radius:8px; padding:9px 13px;
-  background:#202836; color:var(--text); font:inherit; cursor:pointer
+  background:#eaf0f7; color:var(--text); font:inherit; cursor:pointer
 }
 button:hover { border-color:var(--accent) }
 button:disabled { opacity:.5; cursor:default }
