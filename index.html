@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WebGL 2.0 Browser Test — Three.js r160</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#10141b; --panel:#191f29; --line:#354153;
+  --text:#e8edf5; --muted:#a7b2c3; --good:#75dfaa;
+  --bad:#ff8b8b; --accent:#80b7ff;
+}
+* { box-sizing:border-box }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+main { width:min(1100px,calc(100% - 28px)); margin:28px auto 40px }
+h1 { margin:0 0 6px; font-size:clamp(1.6rem,4vw,2.25rem) }
+h2 { margin:0 0 12px; font-size:1.05rem }
+p { margin:6px 0 }
+.sub,.muted { color:var(--muted) }
+.version {
+  display:inline-block; border:1px solid var(--line);
+  border-radius:999px; padding:3px 9px;
+  font-size:.8rem; color:var(--accent)
+}
+.layout {
+  display:grid; grid-template-columns:minmax(0,1.3fr) minmax(280px,.9fr);
+  gap:16px; margin-top:20px
+}
+.panel {
+  background:var(--panel); border:1px solid var(--line);
+  border-radius:14px; padding:18px; min-width:0
+}
+#stage {
+  height:390px; min-height:260px; position:relative; overflow:hidden;
+  border:1px solid var(--line); border-radius:10px;
+  background:radial-gradient(ellipse at center,#222d3d,#111720 72%)
+}
+#stage canvas { display:block; width:100%; height:100% }
+.overlay {
+  position:absolute; inset:0; display:grid; place-items:center;
+  padding:20px; text-align:center; color:var(--muted);
+  pointer-events:none
+}
+.check {
+  display:flex; justify-content:space-between; align-items:flex-start;
+  gap:12px; padding-bottom:9px; margin-bottom:9px;
+  border-bottom:1px solid var(--line)
+}
+.check:last-child { border:0; margin-bottom:0; padding-bottom:0 }
+.check-name { font-weight:600 }
+.detail { color:var(--muted); font-size:.88rem; overflow-wrap:anywhere }
+.result { font-size:.82rem; font-weight:700; white-space:nowrap }
+.good { color:var(--good) }
+.bad { color:var(--bad) }
+.metrics {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px; margin-top:14px
+}
+.metric { background:#202836; border-radius:10px; padding:12px }
+.metric strong {
+  display:block; font-size:1.35rem; font-variant-numeric:tabular-nums
+}
+.metric span { color:var(--muted); font-size:.8rem }
+.actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px }
+button {
+  border:1px solid var(--line); border-radius:8px; padding:9px 13px;
+  background:#202836; color:var(--text); font:inherit; cursor:pointer
+}
+button:hover { border-color:var(--accent) }
+button:disabled { opacity:.5; cursor:default }
+.note,footer { color:var(--muted); font-size:.9rem }
+.note { margin-top:16px }
+footer { margin-top:18px }
+code { overflow-wrap:anywhere }
+@media(max-width:760px) {
+  main { margin-top:18px }
+  .layout { grid-template-columns:1fr }
+  #stage { height:320px }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>WebGL 2.0 Browser Test</h1>
+    <p class="sub">A graphics compatibility check with a rotating 3D cube.</p>
+    <span class="version">Pinned library: Three.js r160</span>
+  </header>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>3D rendering test</h2>
+      <div id="stage">
+        <div id="overlay" class="overlay">Initializing WebGL 2.0…</div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><strong id="fps">—</strong><span>FPS (rolling 2 s)</span></div>
+        <div class="metric"><strong id="frame">—</strong><span>Frame time</span></div>
+        <div class="metric"><strong id="resolution">—</strong><span>Drawing buffer</span></div>
+      </div>
+      <div class="actions">
+        <button id="toggle" disabled>Pause rotation</button>
+        <button id="reset" disabled>Reset test</button>
+      </div>
+      <p class="note">FPS depends on display refresh rate, browser settings, power mode and system load. One cube is a compatibility check, not a full GPU benchmark.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Test results</h2>
+      <div class="check">
+        <div><div class="check-name">Three.js version</div><div id="lib-detail" class="detail">Waiting for library…</div></div>
+        <div id="lib-result" class="result">WAIT</div>
+      </div>
+      <div class="check">
+        <div><div class="check-name">WebGL 2.0</div><div id="webgl-detail" class="detail">Checking support…</div></div>
+        <div id="webgl-result" class="result">WAIT</div>
+      </div>
+      <div class="check">
+        <div><div class="check-name">GPU / renderer</div><div id="gpu-detail" class="detail">Not available yet</div></div>
+        <div id="gpu-result" class="result">INFO</div>
+      </div>
+      <div class="check">
+        <div><div class="check-name">WebGL version</div><div id="gl-detail" class="detail">—</div></div>
+        <div id="gl-result" class="result">INFO</div>
+      </div>
+      <div class="check">
+        <div><div class="check-name">GLSL version</div><div id="glsl-detail" class="detail">—</div></div>
+        <div id="glsl-result" class="result">INFO</div>
+      </div>
+      <div class="check">
+        <div><div class="check-name">Context status</div><div id="context-detail" class="detail">Waiting for WebGL context…</div></div>
+        <div id="context-result" class="result">WAIT</div>
+      </div>
+      <p class="note">WebGL 2.0 support alone does not prove hardware acceleration. Browsers may use a software renderer or hide GPU details for privacy.</p>
+    </section>
+  </div>
+
+  <footer>
+    Uses the local <code>three.min.js</code> file. Works from <code>file://</code>
+    or a static website such as GitHub Pages. No modules or server-side code required.
+  </footer>
+</main>
+
+<script src="./three.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function setCheck(prefix, result, detail, state) {
+    $(prefix + "-result").textContent = result;
+    $(prefix + "-result").className = "result " + (state || "");
+    $(prefix + "-detail").textContent = detail;
+  }
+
+  var stage = $("stage");
+  var overlay = $("overlay");
+  var renderer, scene, camera, cube, animationId;
+  var running = true;
+  var lastFrame = 0;
+  var fpsFrames = 0;
+  var fpsStart = 0;
+  var frameMs = 0;
+  var contextLost = false;
+
+  if (!window.THREE) {
+    overlay.textContent = "Could not load three.min.js. Put it beside index.html.";
+    setCheck("lib", "FAIL", "three.min.js was not found or failed to load.", "bad");
+    setCheck("webgl", "FAIL", "The test could not start.", "bad");
+    setCheck("context", "FAIL", "No WebGL context was created.", "bad");
+    return;
+  }
+
+  var revision = String(THREE.REVISION);
+  var exactVersion = revision === "160";
+  setCheck("lib", exactVersion ? "PASS" : "FAIL",
+    "Detected Three.js r" + revision +
+    (exactVersion ? " (expected r160)." : "; this test requires r160."),
+    exactVersion ? "good" : "bad");
+
+  if (!exactVersion) {
+    overlay.textContent = "Wrong Three.js version. This test requires r160.";
+    setCheck("webgl", "SKIP", "The library version does not match.", "");
+    setCheck("context", "SKIP", "Test stopped because of the library version.", "");
+    return;
+  }
+
+  try {
+    renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: false,
+      powerPreference: "high-performance"
+    });
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(stage.clientWidth, stage.clientHeight, false);
+    renderer.setClearColor(0x111720, 1);
+    stage.insertBefore(renderer.domElement, overlay);
+    renderer.domElement.setAttribute("aria-label", "Rotating 3D cube WebGL test");
+
+    var gl = renderer.getContext();
+    var isWebGL2 = typeof WebGL2RenderingContext !== "undefined" &&
+                   gl instanceof WebGL2RenderingContext;
+
+    setCheck("webgl", isWebGL2 ? "PASS" : "FAIL",
+      isWebGL2 ? "A WebGL 2.0 context was created successfully." :
+                 "WebGL 2.0 context unavailable.",
+      isWebGL2 ? "good" : "bad");
+
+    if (!isWebGL2) {
+      overlay.textContent = "WebGL 2.0 is not available in this browser.";
+      setCheck("context", "FAIL", "No WebGL 2.0 context.", "bad");
+      renderer.dispose();
+      return;
+    }
+
+    setCheck("gl", "INFO", gl.getParameter(gl.VERSION) || "Unavailable", "");
+    setCheck("glsl", "INFO",
+      gl.getParameter(gl.SHADING_LANGUAGE_VERSION) || "Unavailable", "");
+
+    var vendor = gl.getParameter(gl.VENDOR) || "Unavailable";
+    var rendererName = gl.getParameter(gl.RENDERER) || "Unavailable";
+    var debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+
+    if (debugInfo) {
+      vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || vendor;
+      rendererName = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || rendererName;
+    }
+
+    setCheck("gpu", "INFO", vendor + " — " + rendererName, "");
+
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(
+      45, stage.clientWidth / stage.clientHeight, 0.1, 100
+    );
+    camera.position.set(0, 0, 4.2);
+
+    var materials = [
+      new THREE.MeshStandardMaterial({color:0x54a6ff, roughness:0.42, metalness:0.08}),
+      new THREE.MeshStandardMaterial({color:0xffb454, roughness:0.42, metalness:0.08}),
+      new THREE.MeshStandardMaterial({color:0x70dfac, roughness:0.42, metalness:0.08}),
+      new THREE.MeshStandardMaterial({color:0xf27d9a, roughness:0.42, metalness:0.08}),
+      new THREE.MeshStandardMaterial({color:0xb49aff, roughness:0.42, metalness:0.08}),
+      new THREE.MeshStandardMaterial({color:0xffdf70, roughness:0.42, metalness:0.08})
+    ];
+
+    cube = new THREE.Mesh(new THREE.BoxGeometry(1.65, 1.65, 1.65), materials);
+    scene.add(cube);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x35445c, 2.0));
+
+    var keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    keyLight.position.set(3, 4, 5);
+    scene.add(keyLight);
+
+    setCheck("context", "PASS",
+      "WebGL context is active; no context loss detected.", "good");
+
+    overlay.style.display = "none";
+    $("toggle").disabled = false;
+    $("reset").disabled = false;
+
+    function resize() {
+      if (!renderer || !camera) return;
+      var width = Math.max(1, stage.clientWidth);
+      var height = Math.max(1, stage.clientHeight);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height, false);
+      $("resolution").textContent =
+        renderer.domElement.width + " × " + renderer.domElement.height;
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+
+    renderer.domElement.addEventListener("webglcontextlost", function (event) {
+      event.preventDefault();
+      contextLost = true;
+      if (animationId) cancelAnimationFrame(animationId);
+      setCheck("context", "FAIL",
+        "WebGL context lost. Reload the page to run the test again.", "bad");
+      overlay.style.display = "grid";
+      overlay.textContent = "WebGL context lost.";
+    }, false);
+
+    function animate(timestamp) {
+      animationId = requestAnimationFrame(animate);
+      if (contextLost) return;
+
+      if (!fpsStart) fpsStart = timestamp;
+      if (lastFrame) frameMs = timestamp - lastFrame;
+      lastFrame = timestamp;
+
+      if (running) {
+        cube.rotation.x += 0.006;
+        cube.rotation.y += 0.010;
+      }
+
+      renderer.render(scene, camera);
+      fpsFrames++;
+
+      if (timestamp - fpsStart >= 2000) {
+        $("fps").textContent =
+          (fpsFrames * 1000 / (timestamp - fpsStart)).toFixed(1);
+        fpsFrames = 0;
+        fpsStart = timestamp;
+      }
+
+      $("frame").textContent = frameMs > 0 ? frameMs.toFixed(1) + " ms" : "—";
+    }
+
+    animationId = requestAnimationFrame(animate);
+
+    $("toggle").addEventListener("click", function () {
+      running = !running;
+      $("toggle").textContent = running ? "Pause rotation" : "Resume rotation";
+    });
+
+    $("reset").addEventListener("click", function () {
+      cube.rotation.set(0, 0, 0);
+      fpsFrames = 0;
+      fpsStart = 0;
+      lastFrame = 0;
+      $("fps").textContent = "—";
+      $("frame").textContent = "—";
+    });
+  } catch (error) {
+    overlay.style.display = "grid";
+    overlay.textContent = "WebGL initialization failed: " +
+      (error && error.message ? error.message : String(error));
+    setCheck("webgl", "FAIL", "Initialization failed.", "bad");
+    setCheck("context", "FAIL",
+      String(error && error.message ? error.message : error), "bad");
+  }
+})();
+</script>
+</body>
+</html>
